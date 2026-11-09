@@ -1,0 +1,146 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "E:\\RecreationBill\\RecreationBill\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|e:\\recreationbill\\recreationbill\\recreationbill\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|solutionrelative:recreationbill\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\User\\AppData\\Roaming\\Microsoft\\UserSecrets\\9db6ef5a-0ce1-4cdc-8927-6cfc539af954\\secrets.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|e:\\recreationbill\\recreationbill\\recreationbill\\controllers\\recreationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|solutionrelative:recreationbill\\controllers\\recreationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|e:\\recreationbill\\recreationbill\\recreationbill\\repositories\\recreationrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|solutionrelative:recreationbill\\repositories\\recreationrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|e:\\recreationbill\\recreationbill\\recreationbill\\services\\databaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|solutionrelative:recreationbill\\services\\databaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|e:\\recreationbill\\recreationbill\\recreationbill\\models\\recreationbillrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|solutionrelative:recreationbill\\models\\recreationbillrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|e:\\recreationbill\\recreationbill\\recreationbill\\models\\employeeprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|solutionrelative:recreationbill\\models\\employeeprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|e:\\recreationbill\\recreationbill\\recreationbill\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2D37F57-F7E6-77CB-74C4-BFA4CD27A194}|RecreationBill\\RecreationBill.csproj|solutionrelative:recreationbill\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "secrets.json",
+              "DocumentMoniker": "C:\\Users\\User\\AppData\\Roaming\\Microsoft\\UserSecrets\\9db6ef5a-0ce1-4cdc-8927-6cfc539af954\\secrets.json",
+              "ToolTip": "C:\\Users\\User\\AppData\\Roaming\\Microsoft\\UserSecrets\\9db6ef5a-0ce1-4cdc-8927-6cfc539af954\\secrets.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAABNAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-11-09T06:03:21.524Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "RecreationController.cs",
+              "DocumentMoniker": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Controllers\\RecreationController.cs",
+              "RelativeDocumentMoniker": "RecreationBill\\Controllers\\RecreationController.cs",
+              "ToolTip": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Controllers\\RecreationController.cs",
+              "RelativeToolTip": "RecreationBill\\Controllers\\RecreationController.cs",
+              "ViewState": "AgIAACMAAAAAAAAAAAAuwD8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T06:35:26.045Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "RecreationRepository.cs",
+              "DocumentMoniker": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Repositories\\RecreationRepository.cs",
+              "RelativeDocumentMoniker": "RecreationBill\\Repositories\\RecreationRepository.cs",
+              "ToolTip": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Repositories\\RecreationRepository.cs",
+              "RelativeToolTip": "RecreationBill\\Repositories\\RecreationRepository.cs",
+              "ViewState": "AgIAAEMAAAAAAAAAAAAuwEwAAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T06:32:03.287Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "RecreationBillRequest.cs",
+              "DocumentMoniker": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Models\\RecreationBillRequest.cs",
+              "RelativeDocumentMoniker": "RecreationBill\\Models\\RecreationBillRequest.cs",
+              "ToolTip": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Models\\RecreationBillRequest.cs",
+              "RelativeToolTip": "RecreationBill\\Models\\RecreationBillRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwCIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T06:17:51.755Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "EmployeeProfile.cs",
+              "DocumentMoniker": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Models\\EmployeeProfile.cs",
+              "RelativeDocumentMoniker": "RecreationBill\\Models\\EmployeeProfile.cs",
+              "ToolTip": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Models\\EmployeeProfile.cs",
+              "RelativeToolTip": "RecreationBill\\Models\\EmployeeProfile.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAA1wBgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T06:15:31.314Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\appsettings.json",
+              "RelativeDocumentMoniker": "RecreationBill\\appsettings.json",
+              "ToolTip": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\appsettings.json",
+              "RelativeToolTip": "RecreationBill\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-11-08T04:38:20.908Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "DatabaseService.cs",
+              "DocumentMoniker": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Services\\DatabaseService.cs",
+              "RelativeDocumentMoniker": "RecreationBill\\Services\\DatabaseService.cs",
+              "ToolTip": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Services\\DatabaseService.cs",
+              "RelativeToolTip": "RecreationBill\\Services\\DatabaseService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T05:17:32.178Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Program.cs",
+              "DocumentMoniker": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Program.cs",
+              "RelativeDocumentMoniker": "RecreationBill\\Program.cs",
+              "ToolTip": "E:\\RecreationBill\\RecreationBill\\RecreationBill\\Program.cs",
+              "RelativeToolTip": "RecreationBill\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-08T04:38:24.961Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
