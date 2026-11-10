@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RecreationBill")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f59eabc6fbae12ad6455d4249f8c771fe778696f")]
 [assembly: System.Reflection.AssemblyProductAttribute("RecreationBill")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RecreationBill")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

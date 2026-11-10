@@ -1,0 +1,191 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "RecreationBill | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://localhost:7231"
+    },
+    {
+      "url": "http://localhost:5254"
+    }
+  ],
+  "paths": {
+    "/api/diagnostics/all-data": {
+      "get": {
+        "tags": [
+          "RecreationBill"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Recreation/employee/{legacyEmpId}": {
+      "get": {
+        "tags": [
+          "Recreation"
+        ],
+        "parameters": [
+          {
+            "name": "legacyEmpId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Recreation/save": {
+      "post": {
+        "tags": [
+          "Recreation"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecreationBillRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecreationBillRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecreationBillRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Recreation/update-docket": {
+      "put": {
+        "tags": [
+          "Recreation"
+        ],
+        "parameters": [
+          {
+            "name": "billNo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "docketNo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RecreationBillRequest": {
+        "required": [
+          "employeeId",
+          "category",
+          "employeeName",
+          "billNo"
+        ],
+        "type": "object",
+        "properties": {
+          "legacyEmployeeId": {
+            "maximum": 9223372036854776000,
+            "minimum": 1,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "employeeName": {
+            "type": "string"
+          },
+          "designation": {
+            "type": "string"
+          },
+          "office": {
+            "type": "string"
+          },
+          "bankAccountNo": {
+            "type": "string"
+          },
+          "stamp": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "basicPay": {
+            "minimum": 0,
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "billNo": {
+            "type": "string"
+          },
+          "dDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "RecreationBill"
+    },
+    {
+      "name": "Recreation"
+    }
+  ]
+}

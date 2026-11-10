@@ -1,4 +1,5 @@
-﻿using Oracle.ManagedDataAccess.Client;
+﻿
+using Oracle.ManagedDataAccess.Client;
 using RecreationBill.Models;
 using RecreationBill.Services;
 
@@ -13,61 +14,129 @@ namespace RecreationBill.Repositories
             _dbService = dbService;
         }
 
+        // -------------------------------------------------------
+        // 1. EMPLOYEE LOOKUP
+        // Salary ID = EMPLOYEE.EMPLOYEEID
+        // -------------------------------------------------------
+
         public EmployeeProfile? GetEmployeeData(long legacyEmpId)
         {
             using var conn = _dbService.CreateConnection();
-            conn?.Open();
+            conn.Open();
 
-            // 1. Check if record exists within the last 200 days
-            string checkQuery = @"SELECT * FROM rec_result 
-                              WHERE employeeid = :empId 
-                              AND ddate BETWEEN SYSDATE - 200 AND SYSDATE";
+            // First check whether a recreation bill exists
+            // for this employee within the previous 200 days.
+
+            string checkQuery = @"
+                SELECT
+                    EMPLOYEEID,
+                    EMPLOYEE_ID,
+                    EMPLOYEE_NAME,
+                    DESIGNATION,
+                    OFFICE,
+                    CATEGORY,
+                    BANK_ACCOUNT_NO,
+                    BASICPAY,
+                    BILL_NO
+                FROM MONI.REC_RESULT
+                WHERE EMPLOYEEID = :empId
+                  AND DDATE BETWEEN SYSDATE - 200 AND SYSDATE
+                ORDER BY DDATE DESC";
 
             using (var cmd = new OracleCommand(checkQuery, conn))
             {
-                cmd.Parameters.Add(new OracleParameter("empId", legacyEmpId));
+                cmd.BindByName = true;
+
+                cmd.Parameters.Add(
+                    "empId", OracleDbType.Int64
+                ).Value = legacyEmpId;
+
                 using var reader = cmd.ExecuteReader();
+
                 if (reader.Read())
                 {
                     return new EmployeeProfile
                     {
+                        LegacyEmployeeId = legacyEmpId,
                         IsAlreadyRecorded = true,
-                        BillNo = reader["bill_no"]?.ToString() ?? "",
-                        EmployeeId = reader["employee_id"]?.ToString() ?? "",
-                        EmployeeName = reader["employee_Name"]?.ToString() ?? "",
-                        Designation = reader["Designation"]?.ToString() ?? "",
-                        Office = reader["Office"]?.ToString() ?? "",
-                        Category = reader["category"]?.ToString() ?? "",
-                        BankAccountNo = reader["Bank_Account_No"]?.ToString() ?? "",
-                        BasicPay = Convert.ToDecimal(reader["BasicPay"])
+
+                        BillNo = reader["BILL_NO"]?.ToString() ?? "",
+                        EmployeeId = reader["EMPLOYEE_ID"]?.ToString() ?? "",
+                        EmployeeName = reader["EMPLOYEE_NAME"]?.ToString() ?? "",
+                        Designation = reader["DESIGNATION"]?.ToString() ?? "",
+                        Office = reader["OFFICE"]?.ToString() ?? "",
+                        Category = reader["CATEGORY"]?.ToString() ?? "",
+                        BankAccountNo = reader["BANK_ACCOUNT_NO"]?.ToString() ?? "",
+
+                        BasicPay = Convert.ToDecimal(reader["BASICPAY"])
                     };
                 }
             }
 
-            string masterQuery = "SELECT * FROM employee WHERE employeeID = :empId";
+            // No recent recreation bill found.
+            // Now retrieve employee information from the master table.
+
+            string masterQuery = @"
+                SELECT
+                    EMPLOYEEID,
+                    EMPLOYEE_ID,
+                    EMPLOYEE_NAME,
+                    DESIGNATION,
+                    OFFICE,
+                    CATEGORY,
+                    BANK_ACCOUNT_NO,
+                    PREV_SCALE_BASIC
+                FROM BUETIIS.EMPLOYEE
+                WHERE EMPLOYEEID = :empId";
+
             using (var cmd = new OracleCommand(masterQuery, conn))
             {
-                cmd.Parameters.Add(new OracleParameter("empId", legacyEmpId));
+                cmd.BindByName = true;
+
+                cmd.Parameters.Add(
+                    "empId", OracleDbType.Int64
+                ).Value = legacyEmpId;
+
                 using var reader = cmd.ExecuteReader();
+
                 if (reader.Read())
                 {
+                    // PREV_SCALE_BASIC is nullable in Oracle.
+                    // Use zero if the database value is NULL.
+                    decimal basicPay = reader.IsDBNull(
+                        reader.GetOrdinal("PREV_SCALE_BASIC"))
+                        ? 0m
+                        : reader.GetDecimal(
+                            reader.GetOrdinal("PREV_SCALE_BASIC"));
+
                     return new EmployeeProfile
                     {
+                        LegacyEmployeeId = legacyEmpId,
                         IsAlreadyRecorded = false,
-                        EmployeeId = reader["Employee_ID"]?.ToString() ?? "",
-                        EmployeeName = reader["Employee_Name"]?.ToString() ?? "",
-                        Designation = reader["Designation"]?.ToString() ?? "",
-                        Office = reader["Office"]?.ToString() ?? "",
-                        Category = reader["category"]?.ToString() ?? "",
-                        BankAccountNo = reader["Bank_Account_No"]?.ToString() ?? "",
-                        BasicPay = Convert.ToDecimal(reader["Prev_Scale_Basic"]) 
+
+                        EmployeeId = reader["EMPLOYEE_ID"]?.ToString() ?? "",
+                        EmployeeName = reader["EMPLOYEE_NAME"]?.ToString() ?? "",
+                        Designation = reader["DESIGNATION"]?.ToString() ?? "",
+                        Office = reader["OFFICE"]?.ToString() ?? "",
+                        Category = reader["CATEGORY"]?.ToString() ?? "",
+                        BankAccountNo = reader["BANK_ACCOUNT_NO"]?.ToString() ?? "",
+
+                        BasicPay = basicPay,
+                        BillNo = ""
                     };
                 }
             }
 
+            // Salary ID does not exist.
             return null;
         }
 
+
+        // -------------------------------------------------------
+        // 2. SAVE RECREATION BILL
+        // Delete existing matching record, then insert new record.
+        // Both operations run in one transaction.
+        // -------------------------------------------------------
 
         public void SaveRecreationBill(RecreationBillRequest model)
         {
@@ -78,118 +147,130 @@ namespace RecreationBill.Repositories
 
             try
             {
-                // STEP 1: Delete an existing record for the same
-                // employee and bill number (same as original VB6 logic).
+                // STEP 1: Delete existing matching record.
 
                 string deleteSql = @"
-            DELETE FROM rec_result
-            WHERE employeeid = :empId
-            AND bill_no = :billNo";
+                    DELETE FROM MONI.REC_RESULT
+                    WHERE EMPLOYEEID = :empId
+                      AND BILL_NO = :billNo";
 
                 using (var cmd = new OracleCommand(deleteSql, conn))
                 {
                     cmd.Transaction = transaction;
                     cmd.BindByName = true;
 
-                    cmd.Parameters.Add("empId", OracleDbType.Int64)
-                        .Value = model.LegacyEmployeeId;
+                    cmd.Parameters.Add(
+                        "empId", OracleDbType.Int64
+                    ).Value = model.LegacyEmployeeId;
 
-                    cmd.Parameters.Add("billNo", OracleDbType.Varchar2)
-                        .Value = model.BillNo;
+                    cmd.Parameters.Add(
+                        "billNo", OracleDbType.Varchar2, 15
+                    ).Value = model.BillNo;
 
                     cmd.ExecuteNonQuery();
                 }
 
 
-                // STEP 2: Insert the new recreation bill record.
+                // STEP 2: Insert the new recreation bill.
 
                 string insertSql = @"
-            INSERT INTO rec_result
-            (
-                employeeid,
-                employee_id,
-                category,
-                employee_Name,
-                Designation,
-                Office,
-                Bank_Account_No,
-                Stamp,
-                BasicPay,
-                Bill_No,
-                DDate
-            )
-            VALUES
-            (
-                :legacyId,
-                :empId,
-                :cat,
-                :name,
-                :desig,
-                :office,
-                :bank,
-                :stamp,
-                :basic,
-                :billNo,
-                :ddate
-            )";
+                    INSERT INTO MONI.REC_RESULT
+                    (
+                        EMPLOYEEID,
+                        EMPLOYEE_ID,
+                        EMPLOYEE_NAME,
+                        DESIGNATION,
+                        OFFICE,
+                        CATEGORY,
+                        BASICPAY,
+                        BANK_ACCOUNT_NO,
+                        BILL_NO,
+                        STAMP,
+                        DDATE
+                    )
+                    VALUES
+                    (
+                        :legacyId,
+                        :empId,
+                        :name,
+                        :designation,
+                        :office,
+                        :category,
+                        :basicPay,
+                        :bank,
+                        :billNo,
+                        :stamp,
+                        :ddate
+                    )";
 
                 using (var cmd = new OracleCommand(insertSql, conn))
                 {
                     cmd.Transaction = transaction;
                     cmd.BindByName = true;
 
-                    cmd.Parameters.Add("legacyId", OracleDbType.Int64)
-                        .Value = model.LegacyEmployeeId;
+                    cmd.Parameters.Add(
+                        "legacyId", OracleDbType.Int64
+                    ).Value = model.LegacyEmployeeId;
 
-                    cmd.Parameters.Add("empId", OracleDbType.Varchar2)
-                        .Value = model.EmployeeId;
+                    cmd.Parameters.Add(
+                        "empId", OracleDbType.Varchar2, 15
+                    ).Value = model.EmployeeId;
 
-                    cmd.Parameters.Add("cat", OracleDbType.Varchar2)
-                        .Value = model.Category;
+                    cmd.Parameters.Add(
+                        "name", OracleDbType.Varchar2, 50
+                    ).Value = model.EmployeeName;
 
-                    cmd.Parameters.Add("name", OracleDbType.Varchar2)
-                        .Value = model.EmployeeName;
+                    cmd.Parameters.Add(
+                        "designation", OracleDbType.Varchar2, 50
+                    ).Value = model.Designation;
 
-                    cmd.Parameters.Add("desig", OracleDbType.Varchar2)
-                        .Value = model.Designation;
+                    cmd.Parameters.Add(
+                        "office", OracleDbType.Varchar2, 50
+                    ).Value = model.Office;
 
-                    cmd.Parameters.Add("office", OracleDbType.Varchar2)
-                        .Value = model.Office;
+                    cmd.Parameters.Add(
+                        "category", OracleDbType.Varchar2, 20
+                    ).Value = model.Category;
 
-                    cmd.Parameters.Add("bank", OracleDbType.Varchar2)
-                        .Value = model.BankAccountNo;
+                    cmd.Parameters.Add(
+                        "basicPay", OracleDbType.Decimal
+                    ).Value = model.BasicPay;
 
-                    cmd.Parameters.Add("stamp", OracleDbType.Decimal)
-                        .Value = model.Stamp;
+                    cmd.Parameters.Add(
+                        "bank", OracleDbType.Varchar2, 15
+                    ).Value = string.IsNullOrWhiteSpace(model.BankAccountNo)
+                        ? DBNull.Value
+                        : model.BankAccountNo;
 
-                    cmd.Parameters.Add("basic", OracleDbType.Decimal)
-                        .Value = model.BasicPay;
+                    cmd.Parameters.Add(
+                        "billNo", OracleDbType.Varchar2, 15
+                    ).Value = model.BillNo;
 
-                    cmd.Parameters.Add("billNo", OracleDbType.Varchar2)
-                        .Value = model.BillNo;
+                    cmd.Parameters.Add(
+                        "stamp", OracleDbType.Decimal
+                    ).Value = model.Stamp;
 
-                    cmd.Parameters.Add("ddate", OracleDbType.Date)
-                        .Value = model.DDate;
+                    cmd.Parameters.Add(
+                        "ddate", OracleDbType.Date
+                    ).Value = model.DDate;
 
                     cmd.ExecuteNonQuery();
                 }
 
 
-                // STEP 3: Commit transaction if everything succeeds.
+                // STEP 3: Commit both operations.
 
                 transaction.Commit();
             }
             catch
             {
-                // STEP 4: Rollback if any database operation fails.
-
                 try
                 {
                     transaction.Rollback();
                 }
                 catch
                 {
-                    // Preserve the original database exception.
+                    // Preserve the original exception.
                 }
 
                 throw;
@@ -197,18 +278,35 @@ namespace RecreationBill.Repositories
         }
 
 
-        // Ported from: Command1_Click (Update Action for Docket No)
-        public bool UpdateDocketNumber(string billNo, string docketNo)
-        {
-            using var conn = _dbService.CreateConnection() as OracleConnection;
-            conn?.Open();
+        // -------------------------------------------------------
+        // 3. UPDATE DOCKET NUMBER
+        // DOC_NO is NUMBER in Oracle.
+        // -------------------------------------------------------
 
-            string updateSql = "UPDATE MONI.REC_RESULT SET DOC_NO = :docketNo WHERE BILL_NO = :billNo";
+        public bool UpdateDocketNumber(string billNo, decimal docketNo)
+        {
+            using var conn = _dbService.CreateConnection();
+            conn.Open();
+
+            string updateSql = @"
+                UPDATE MONI.REC_RESULT
+                SET DOC_NO = :docketNo
+                WHERE BILL_NO = :billNo";
+
             using var cmd = new OracleCommand(updateSql, conn);
-            cmd.Parameters.Add(new OracleParameter("docketNo", docketNo));
-            cmd.Parameters.Add(new OracleParameter("billNo", billNo));
+
+            cmd.BindByName = true;
+
+            cmd.Parameters.Add(
+                "docketNo", OracleDbType.Decimal
+            ).Value = docketNo;
+
+            cmd.Parameters.Add(
+                "billNo", OracleDbType.Varchar2, 15
+            ).Value = billNo;
 
             int rowsAffected = cmd.ExecuteNonQuery();
+
             return rowsAffected > 0;
         }
     }
