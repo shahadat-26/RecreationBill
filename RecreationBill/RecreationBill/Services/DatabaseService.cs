@@ -9,10 +9,8 @@ namespace RecreationBill.Services
 
         public DatabaseService(IConfiguration configuration)
         {
-            _connectionString =
-                configuration.GetConnectionString("OracleDbConnection")
-                ?? throw new InvalidOperationException(
-                    "Oracle database connection string is missing.");
+            _connectionString = configuration.GetConnectionString("OracleDbConnection")
+                ?? throw new InvalidOperationException("Oracle database connection string is missing.");
         }
 
         // Create a new Oracle connection
@@ -28,7 +26,6 @@ namespace RecreationBill.Services
             conn.Open();
 
             using var cmd = conn.CreateCommand();
-
             cmd.CommandText = "SELECT SYSDATE FROM DUAL";
 
             return Convert.ToDateTime(cmd.ExecuteScalar());

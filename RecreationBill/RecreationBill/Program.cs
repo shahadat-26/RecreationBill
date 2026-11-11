@@ -9,7 +9,7 @@ builder.Services.AddScoped<RecreationRepository>();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-OracleConfiguration.TnsAdmin = @"D:\app\User\product\11.2.0\dbhome_1\NETWORK\ADMIN";
+
 
 var app = builder.Build();
 

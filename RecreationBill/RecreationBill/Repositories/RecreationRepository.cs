@@ -46,10 +46,7 @@ namespace RecreationBill.Repositories
             using (var cmd = new OracleCommand(checkQuery, conn))
             {
                 cmd.BindByName = true;
-
-                cmd.Parameters.Add(
-                    "empId", OracleDbType.Int64
-                ).Value = legacyEmpId;
+                cmd.Parameters.Add("empId", OracleDbType.Int64).Value = legacyEmpId;
 
                 using var reader = cmd.ExecuteReader();
 
@@ -59,7 +56,6 @@ namespace RecreationBill.Repositories
                     {
                         LegacyEmployeeId = legacyEmpId,
                         IsAlreadyRecorded = true,
-
                         BillNo = reader["BILL_NO"]?.ToString() ?? "",
                         EmployeeId = reader["EMPLOYEE_ID"]?.ToString() ?? "",
                         EmployeeName = reader["EMPLOYEE_NAME"]?.ToString() ?? "",
@@ -67,7 +63,6 @@ namespace RecreationBill.Repositories
                         Office = reader["OFFICE"]?.ToString() ?? "",
                         Category = reader["CATEGORY"]?.ToString() ?? "",
                         BankAccountNo = reader["BANK_ACCOUNT_NO"]?.ToString() ?? "",
-
                         BasicPay = Convert.ToDecimal(reader["BASICPAY"])
                     };
                 }
@@ -92,10 +87,7 @@ namespace RecreationBill.Repositories
             using (var cmd = new OracleCommand(masterQuery, conn))
             {
                 cmd.BindByName = true;
-
-                cmd.Parameters.Add(
-                    "empId", OracleDbType.Int64
-                ).Value = legacyEmpId;
+                cmd.Parameters.Add("empId", OracleDbType.Int64).Value = legacyEmpId;
 
                 using var reader = cmd.ExecuteReader();
 
@@ -103,24 +95,20 @@ namespace RecreationBill.Repositories
                 {
                     // PREV_SCALE_BASIC is nullable in Oracle.
                     // Use zero if the database value is NULL.
-                    decimal basicPay = reader.IsDBNull(
-                        reader.GetOrdinal("PREV_SCALE_BASIC"))
-                        ? 0m
-                        : reader.GetDecimal(
-                            reader.GetOrdinal("PREV_SCALE_BASIC"));
+
+                    int basicPayOrdinal = reader.GetOrdinal("PREV_SCALE_BASIC");
+                    decimal basicPay = reader.IsDBNull(basicPayOrdinal) ? 0m : reader.GetDecimal(basicPayOrdinal);
 
                     return new EmployeeProfile
                     {
                         LegacyEmployeeId = legacyEmpId,
                         IsAlreadyRecorded = false,
-
                         EmployeeId = reader["EMPLOYEE_ID"]?.ToString() ?? "",
                         EmployeeName = reader["EMPLOYEE_NAME"]?.ToString() ?? "",
                         Designation = reader["DESIGNATION"]?.ToString() ?? "",
                         Office = reader["OFFICE"]?.ToString() ?? "",
                         Category = reader["CATEGORY"]?.ToString() ?? "",
                         BankAccountNo = reader["BANK_ACCOUNT_NO"]?.ToString() ?? "",
-
                         BasicPay = basicPay,
                         BillNo = ""
                     };
@@ -130,7 +118,6 @@ namespace RecreationBill.Repositories
             // Salary ID does not exist.
             return null;
         }
-
 
         // -------------------------------------------------------
         // 2. SAVE RECREATION BILL
@@ -158,18 +145,11 @@ namespace RecreationBill.Repositories
                 {
                     cmd.Transaction = transaction;
                     cmd.BindByName = true;
-
-                    cmd.Parameters.Add(
-                        "empId", OracleDbType.Int64
-                    ).Value = model.LegacyEmployeeId;
-
-                    cmd.Parameters.Add(
-                        "billNo", OracleDbType.Varchar2, 15
-                    ).Value = model.BillNo;
+                    cmd.Parameters.Add("empId", OracleDbType.Int64).Value = model.LegacyEmployeeId;
+                    cmd.Parameters.Add("billNo", OracleDbType.Varchar2, 15).Value = model.BillNo;
 
                     cmd.ExecuteNonQuery();
                 }
-
 
                 // STEP 2: Insert the new recreation bill.
 
@@ -207,56 +187,20 @@ namespace RecreationBill.Repositories
                 {
                     cmd.Transaction = transaction;
                     cmd.BindByName = true;
-
-                    cmd.Parameters.Add(
-                        "legacyId", OracleDbType.Int64
-                    ).Value = model.LegacyEmployeeId;
-
-                    cmd.Parameters.Add(
-                        "empId", OracleDbType.Varchar2, 15
-                    ).Value = model.EmployeeId;
-
-                    cmd.Parameters.Add(
-                        "name", OracleDbType.Varchar2, 50
-                    ).Value = model.EmployeeName;
-
-                    cmd.Parameters.Add(
-                        "designation", OracleDbType.Varchar2, 50
-                    ).Value = model.Designation;
-
-                    cmd.Parameters.Add(
-                        "office", OracleDbType.Varchar2, 50
-                    ).Value = model.Office;
-
-                    cmd.Parameters.Add(
-                        "category", OracleDbType.Varchar2, 20
-                    ).Value = model.Category;
-
-                    cmd.Parameters.Add(
-                        "basicPay", OracleDbType.Decimal
-                    ).Value = model.BasicPay;
-
-                    cmd.Parameters.Add(
-                        "bank", OracleDbType.Varchar2, 15
-                    ).Value = string.IsNullOrWhiteSpace(model.BankAccountNo)
-                        ? DBNull.Value
-                        : model.BankAccountNo;
-
-                    cmd.Parameters.Add(
-                        "billNo", OracleDbType.Varchar2, 15
-                    ).Value = model.BillNo;
-
-                    cmd.Parameters.Add(
-                        "stamp", OracleDbType.Decimal
-                    ).Value = model.Stamp;
-
-                    cmd.Parameters.Add(
-                        "ddate", OracleDbType.Date
-                    ).Value = model.DDate;
+                    cmd.Parameters.Add("legacyId", OracleDbType.Int64).Value = model.LegacyEmployeeId;
+                    cmd.Parameters.Add("empId", OracleDbType.Varchar2, 15).Value = model.EmployeeId;
+                    cmd.Parameters.Add("name", OracleDbType.Varchar2, 50).Value = model.EmployeeName;
+                    cmd.Parameters.Add("designation", OracleDbType.Varchar2, 50).Value = model.Designation;
+                    cmd.Parameters.Add("office", OracleDbType.Varchar2, 50).Value = model.Office;
+                    cmd.Parameters.Add("category", OracleDbType.Varchar2, 20).Value = model.Category;
+                    cmd.Parameters.Add("basicPay", OracleDbType.Decimal).Value = model.BasicPay;
+                    cmd.Parameters.Add("bank", OracleDbType.Varchar2, 15).Value = string.IsNullOrWhiteSpace(model.BankAccountNo) ? DBNull.Value : model.BankAccountNo;
+                    cmd.Parameters.Add("billNo", OracleDbType.Varchar2, 15).Value = model.BillNo;
+                    cmd.Parameters.Add("stamp", OracleDbType.Decimal).Value = model.Stamp;
+                    cmd.Parameters.Add("ddate", OracleDbType.Date).Value = model.DDate;
 
                     cmd.ExecuteNonQuery();
                 }
-
 
                 // STEP 3: Commit both operations.
 
@@ -277,7 +221,6 @@ namespace RecreationBill.Repositories
             }
         }
 
-
         // -------------------------------------------------------
         // 3. UPDATE DOCKET NUMBER
         // DOC_NO is NUMBER in Oracle.
@@ -296,14 +239,8 @@ namespace RecreationBill.Repositories
             using var cmd = new OracleCommand(updateSql, conn);
 
             cmd.BindByName = true;
-
-            cmd.Parameters.Add(
-                "docketNo", OracleDbType.Decimal
-            ).Value = docketNo;
-
-            cmd.Parameters.Add(
-                "billNo", OracleDbType.Varchar2, 15
-            ).Value = billNo;
+            cmd.Parameters.Add("docketNo", OracleDbType.Decimal).Value = docketNo;
+            cmd.Parameters.Add("billNo", OracleDbType.Varchar2, 15).Value = billNo;
 
             int rowsAffected = cmd.ExecuteNonQuery();
 
