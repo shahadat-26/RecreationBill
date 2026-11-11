@@ -1,11 +1,12 @@
 ﻿
 using Oracle.ManagedDataAccess.Client;
 using RecreationBill.Models;
+using RecreationBill.Repositories.Interfaces;
 using RecreationBill.Services;
 
 namespace RecreationBill.Repositories
 {
-    public class RecreationRepository
+    public class RecreationRepository : IRecreationRepository
     {
         private readonly DatabaseService _dbService;
 
@@ -14,18 +15,15 @@ namespace RecreationBill.Repositories
             _dbService = dbService;
         }
 
-        // -------------------------------------------------------
         // 1. EMPLOYEE LOOKUP
         // Salary ID = EMPLOYEE.EMPLOYEEID
-        // -------------------------------------------------------
 
         public EmployeeProfile? GetEmployeeData(long legacyEmpId)
         {
             using var conn = _dbService.CreateConnection();
             conn.Open();
 
-            // First check whether a recreation bill exists
-            // for this employee within the previous 200 days.
+            // First check whether a recreation bill exists for this employee within the previous 200 days.
 
             string checkQuery = @"
                 SELECT
@@ -68,8 +66,7 @@ namespace RecreationBill.Repositories
                 }
             }
 
-            // No recent recreation bill found.
-            // Now retrieve employee information from the master table.
+            // No recent recreation bill found. Retrieve employee information from the master table.
 
             string masterQuery = @"
                 SELECT
@@ -93,9 +90,6 @@ namespace RecreationBill.Repositories
 
                 if (reader.Read())
                 {
-                    // PREV_SCALE_BASIC is nullable in Oracle.
-                    // Use zero if the database value is NULL.
-
                     int basicPayOrdinal = reader.GetOrdinal("PREV_SCALE_BASIC");
                     decimal basicPay = reader.IsDBNull(basicPayOrdinal) ? 0m : reader.GetDecimal(basicPayOrdinal);
 
@@ -119,11 +113,9 @@ namespace RecreationBill.Repositories
             return null;
         }
 
-        // -------------------------------------------------------
         // 2. SAVE RECREATION BILL
         // Delete existing matching record, then insert new record.
         // Both operations run in one transaction.
-        // -------------------------------------------------------
 
         public void SaveRecreationBill(RecreationBillRequest model)
         {
@@ -221,10 +213,8 @@ namespace RecreationBill.Repositories
             }
         }
 
-        // -------------------------------------------------------
         // 3. UPDATE DOCKET NUMBER
         // DOC_NO is NUMBER in Oracle.
-        // -------------------------------------------------------
 
         public bool UpdateDocketNumber(string billNo, decimal docketNo)
         {

@@ -2,7 +2,8 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using RecreationBill.Models;
-using RecreationBill.Repositories;
+using RecreationBill.Services;
+using RecreationBill.Services.Interfaces;
 
 namespace RecreationBill.Controllers
 {
@@ -10,12 +11,12 @@ namespace RecreationBill.Controllers
     [ApiController]
     public class RecreationController : ControllerBase
     {
-        private readonly RecreationRepository _repository;
+        private readonly IRecreationService _service;
         private readonly ILogger<RecreationController> _logger;
 
-        public RecreationController(RecreationRepository repository, ILogger<RecreationController> logger)
+        public RecreationController(IRecreationService service, ILogger<RecreationController> logger)
         {
-            _repository = repository;
+            _service = service;
             _logger = logger;
         }
 
@@ -25,7 +26,7 @@ namespace RecreationBill.Controllers
         {
             if (legacyEmpId <= 0) return BadRequest(new { message = "Please enter a valid Salary ID." });
 
-            var profile = _repository.GetEmployeeData(legacyEmpId);
+            var profile = _service.GetEmployeeData(legacyEmpId);
 
             if (profile == null) return NotFound(new { message = "There is no such ID. Please enter a valid ID." });
 
@@ -38,7 +39,7 @@ namespace RecreationBill.Controllers
         {
             try
             {
-                _repository.SaveRecreationBill(request);
+                _service.SaveRecreationBill(request);
                 return Ok(new { message = "Recreation bill successfully saved." });
             }
             catch (Exception ex)
@@ -65,7 +66,7 @@ namespace RecreationBill.Controllers
 
             try
             {
-                bool success = _repository.UpdateDocketNumber(billNo, numericDocketNo);
+                bool success = _service.UpdateDocketNumber(billNo, numericDocketNo);
 
                 if (!success) return NotFound(new { message = "No records found for the supplied Bill Number." });
 
