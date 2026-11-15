@@ -77,7 +77,7 @@ namespace RecreationBill.Repositories
                     OFFICE,
                     CATEGORY,
                     BANK_ACCOUNT_NO,
-                    PREV_SCALE_BASIC
+                    STEP_PAY
                 FROM BUETIIS.EMPLOYEE
                 WHERE EMPLOYEEID = :empId";
 
@@ -90,7 +90,7 @@ namespace RecreationBill.Repositories
 
                 if (reader.Read())
                 {
-                    int basicPayOrdinal = reader.GetOrdinal("PREV_SCALE_BASIC");
+                    int basicPayOrdinal = reader.GetOrdinal("STEP_PAY");
                     decimal basicPay = reader.IsDBNull(basicPayOrdinal) ? 0m : reader.GetDecimal(basicPayOrdinal);
 
                     return new EmployeeProfile
