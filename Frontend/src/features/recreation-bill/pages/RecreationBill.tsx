@@ -1,23 +1,39 @@
 
 import { useEffect, useState } from "react";
 import type { KeyboardEvent } from "react";
+
+import MessageModal, {
+    type MessageType,
+} from "../../../shared/components/MessageModal";
+
 import { useEmployeeSearch } from "../hooks/useEmployeeSearch";
 import {
     saveRecreationBill,
-    updateDocketNumber
+    updateDocketNumber,
 } from "../services/recreationApi";
+
+interface ModalState {
+    type: MessageType;
+    message: string;
+    title?: string;
+}
 
 function getTodayDate(): string {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, "0");
     const day = String(today.getDate()).padStart(2, "0");
+
     return `${year}-${month}-${day}`;
 }
 
-const inputClass = "h-[42px] w-full rounded-md border border-slate-300 bg-white px-4 text-[14px] text-slate-800 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-300 read-only:bg-slate-50 read-only:text-slate-600";
+const inputClass =
+    "h-[42px] w-full rounded-md border border-slate-300 bg-white px-4 text-[14px] text-slate-800 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-300 read-only:bg-slate-50 read-only:text-slate-600";
+
 const labelClass = "mb-2 block text-[15px] font-medium text-slate-800";
-const buttonClass = "h-[40px] rounded-md bg-[#1D0200] px-3 text-sm font-semibold text-white transition hover:bg-[#350600] disabled:cursor-not-allowed disabled:opacity-50";
+
+const buttonClass =
+    "h-[40px] rounded-md bg-[#1D0200] px-3 text-sm font-semibold text-white transition hover:bg-[#350600] disabled:cursor-not-allowed disabled:opacity-50";
 
 function RecreationBill() {
     const { employee, loading, message, search, reset } = useEmployeeSearch();
@@ -33,9 +49,22 @@ function RecreationBill() {
 
     const [saving, setSaving] = useState(false);
     const [updating, setUpdating] = useState(false);
-    const [operationMessage, setOperationMessage] = useState("");
-    const [operationError, setOperationError] = useState(false);
 
+    const [modal, setModal] = useState<ModalState | null>(null);
+
+    const showModal = (
+        type: MessageType,
+        message: string,
+        title?: string
+    ) => {
+        setModal({ type, message, title });
+    };
+
+    const closeModal = () => {
+        setModal(null);
+    };
+
+    // Populate employee information after a successful search.
     useEffect(() => {
         if (!employee) return;
 
@@ -49,6 +78,21 @@ function RecreationBill() {
         }
     }, [employee]);
 
+    // Display employee-search messages through the shared modal.
+    useEffect(() => {
+        if (!message) return;
+
+        if (employee?.isAlreadyRecorded) {
+            showModal("info", message);
+        } else if (employee) {
+            showModal("success", message);
+        } else if (message === "Please enter a valid Salary ID.") {
+            showModal("warning", message);
+        } else {
+            showModal("error", message);
+        }
+    }, [message, employee]);
+
     useEffect(() => {
         document.title = "Recreation Bill";
     }, []);
@@ -60,19 +104,25 @@ function RecreationBill() {
         setBuetId("");
         setBankAccount("");
         setBasicSalary("");
-        setOperationMessage("");
         reset();
     };
 
-    const handleSalaryIdKeyDown = async (event: KeyboardEvent<HTMLInputElement>) => {
+    const handleSearch = async () => {
+        await search(salaryId);
+    };
+
+    const handleSalaryIdKeyDown = async (
+        event: KeyboardEvent<HTMLInputElement>
+    ) => {
         if (event.key === "Enter") {
             event.preventDefault();
-            setOperationMessage("");
-            await search(salaryId);
+            await handleSearch();
         }
     };
 
-    const handleBillNoKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    const handleBillNoKeyDown = (
+        event: KeyboardEvent<HTMLInputElement>
+    ) => {
         if (event.key === "Enter") {
             event.preventDefault();
             document.getElementById("salaryId")?.focus();
@@ -80,54 +130,59 @@ function RecreationBill() {
     };
 
     const handleDocNoChange = (value: string) => {
-        if (/^\d{0,5}$/.test(value)) setDocNo(value);
+        if (/^\d{0,5}$/.test(value)) {
+            setDocNo(value);
+        }
     };
 
     const handleSave = async () => {
         if (!employee) {
-            setOperationError(true);
-            setOperationMessage("Please search and load an employee first.");
+            showModal(
+                "warning",
+                "Please search and load an employee first."
+            );
             return;
         }
 
         if (!billNo.trim()) {
-            setOperationError(true);
-            setOperationMessage("Please enter the Bill Number.");
+            showModal("warning", "Please enter the Bill Number.");
             return;
         }
 
         if (!buetId.trim() || !employee.employeeName || !employee.category) {
-            setOperationError(true);
-            setOperationMessage("Employee information is incomplete.");
+            showModal("error", "Employee information is incomplete.");
             return;
         }
 
-        if (!basicSalary.trim() || !Number.isFinite(Number(basicSalary)) || Number(basicSalary) < 0) {
-            setOperationError(true);
-            setOperationMessage("Please enter a valid Basic Salary.");
+        if (
+            !basicSalary.trim() ||
+            !Number.isFinite(Number(basicSalary)) ||
+            Number(basicSalary) < 0
+        ) {
+            showModal("warning", "Please enter a valid Basic Salary.");
             return;
         }
 
-        if (!stamp.trim() || !Number.isFinite(Number(stamp)) || Number(stamp) < 0) {
-            setOperationError(true);
-            setOperationMessage("Please enter a valid R Stamp value.");
+        if (
+            !stamp.trim() ||
+            !Number.isFinite(Number(stamp)) ||
+            Number(stamp) < 0
+        ) {
+            showModal("warning", "Please enter a valid R Stamp value.");
             return;
         }
 
         if (!billDate) {
-            setOperationError(true);
-            setOperationMessage("Please select the Bill Date.");
+            showModal("warning", "Please select the Bill Date.");
             return;
         }
 
         if (docNo && !/^\d{1,5}$/.test(docNo)) {
-            setOperationError(true);
-            setOperationMessage("Doc No must contain up to 5 digits.");
+            showModal("warning", "Doc No must contain up to 5 digits.");
             return;
         }
 
         setSaving(true);
-        setOperationMessage("");
 
         try {
             await saveRecreationBill({
@@ -142,11 +197,13 @@ function RecreationBill() {
                 billNo: billNo.trim(),
                 docketNo: docNo ? Number(docNo) : null,
                 stamp: Number(stamp),
-                dDate: billDate
+                dDate: billDate,
             });
 
-            setOperationError(false);
-            setOperationMessage("Recreation Bill saved successfully.");
+            showModal(
+                "success",
+                "Recreation Bill saved successfully."
+            );
 
             reset();
             setSalaryId("");
@@ -156,8 +213,12 @@ function RecreationBill() {
 
             document.getElementById("salaryId")?.focus();
         } catch (error) {
-            setOperationError(true);
-            setOperationMessage(error instanceof Error ? error.message : "Unable to save Recreation Bill.");
+            showModal(
+                "error",
+                error instanceof Error
+                    ? error.message
+                    : "Unable to save Recreation Bill."
+            );
         } finally {
             setSaving(false);
         }
@@ -165,27 +226,34 @@ function RecreationBill() {
 
     const handleUpdate = async () => {
         if (!billNo.trim()) {
-            setOperationError(true);
-            setOperationMessage("Please enter the Bill Number.");
+            showModal("warning", "Please enter the Bill Number.");
             return;
         }
 
         if (!/^\d{1,5}$/.test(docNo)) {
-            setOperationError(true);
-            setOperationMessage("Please enter a valid Doc No (1–5 digits).");
+            showModal(
+                "warning",
+                "Please enter a valid Doc No (1–5 digits)."
+            );
             return;
         }
 
         setUpdating(true);
-        setOperationMessage("");
 
         try {
             await updateDocketNumber(billNo.trim(), Number(docNo));
-            setOperationError(false);
-            setOperationMessage("Docket Number updated successfully.");
+
+            showModal(
+                "success",
+                "Docket Number updated successfully."
+            );
         } catch (error) {
-            setOperationError(true);
-            setOperationMessage(error instanceof Error ? error.message : "Unable to update Docket Number.");
+            showModal(
+                "error",
+                error instanceof Error
+                    ? error.message
+                    : "Unable to update Docket Number."
+            );
         } finally {
             setUpdating(false);
         }
@@ -206,6 +274,67 @@ function RecreationBill() {
                 <section className="w-full">
                     <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
                         <div>
+                            <label className={labelClass}>Salary ID</label>
+                            <div className="flex gap-3">
+                                <input
+                                    id="salaryId"
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={salaryId}
+                                    onChange={(event) =>
+                                        handleSalaryIdChange(event.target.value)
+                                    }
+                                    onKeyDown={handleSalaryIdKeyDown}
+                                    className={inputClass}
+                                />
+
+                                <button
+                                    type="button"
+                                    onClick={handleSearch}
+                                    disabled={loading || saving || updating}
+                                    className={`${buttonClass} w-20 shrink-0`}
+                                >
+                                    {loading ? "..." : "Search"}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>Doc No</label>
+                            <div className="flex gap-3">
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={5}
+                                    value={docNo}
+                                    onChange={(event) =>
+                                        handleDocNoChange(event.target.value)
+                                    }
+                                    className={inputClass}
+                                />
+
+                                <button
+                                    type="button"
+                                    onClick={handleUpdate}
+                                    disabled={updating || saving}
+                                    className={`${buttonClass} w-20 shrink-0`}
+                                >
+                                    {updating ? "..." : "Update"}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>Employee ID</label>
+                            <input
+                                type="text"
+                                value={buetId}
+                                onChange={(event) => setBuetId(event.target.value)}
+                                className={inputClass}
+                            />
+                        </div>
+
+                        <div>
                             <label className={labelClass}>Bill Number</label>
                             <input
                                 type="text"
@@ -217,51 +346,6 @@ function RecreationBill() {
                         </div>
 
                         <div>
-                            <label className={labelClass}>Doc No</label>
-                            <div className="flex gap-3">
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={5}
-                                    value={docNo}
-                                    onChange={(event) => handleDocNoChange(event.target.value)}
-                                    className={inputClass}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleUpdate}
-                                    disabled={updating || saving}
-                                    className={`${buttonClass} shrink-0`}
-                                >
-                                    {updating ? "Updating..." : "Update"}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className={labelClass}>Salary ID</label>
-                            <input
-                                id="salaryId"
-                                type="text"
-                                inputMode="numeric"
-                                value={salaryId}
-                                onChange={(event) => handleSalaryIdChange(event.target.value)}
-                                onKeyDown={handleSalaryIdKeyDown}
-                                className={inputClass}
-                            />
-                        </div>
-
-                        <div>
-                            <label className={labelClass}>BUET EMPLOYEE ID</label>
-                            <input
-                                type="text"
-                                value={buetId}
-                                onChange={(event) => setBuetId(event.target.value)}
-                                className={inputClass}
-                            />
-                        </div>
-
-                        <div className="md:col-span-2">
                             <label className={labelClass}>Employee Name</label>
                             <input
                                 type="text"
@@ -306,7 +390,9 @@ function RecreationBill() {
                             <input
                                 type="text"
                                 value={bankAccount}
-                                onChange={(event) => setBankAccount(event.target.value)}
+                                onChange={(event) =>
+                                    setBankAccount(event.target.value)
+                                }
                                 className={inputClass}
                             />
                         </div>
@@ -316,7 +402,9 @@ function RecreationBill() {
                             <input
                                 type="date"
                                 value={billDate}
-                                onChange={(event) => setBillDate(event.target.value)}
+                                onChange={(event) =>
+                                    setBillDate(event.target.value)
+                                }
                                 className={inputClass}
                             />
                         </div>
@@ -326,7 +414,9 @@ function RecreationBill() {
                             <input
                                 type="number"
                                 value={basicSalary}
-                                onChange={(event) => setBasicSalary(event.target.value)}
+                                onChange={(event) =>
+                                    setBasicSalary(event.target.value)
+                                }
                                 className={inputClass}
                             />
                         </div>
@@ -342,30 +432,24 @@ function RecreationBill() {
                         </div>
                     </div>
 
-                    {message && (
-                        <p className={`mt-5 text-sm ${employee ? "text-emerald-700" : "text-red-600"}`} role="status">
-                            {loading ? "Searching..." : message}
-                        </p>
-                    )}
-
                     {loading && (
-                        <p className="mt-2 text-sm text-slate-500">
+                        <p className="mt-5 text-sm text-slate-500" role="status">
                             Retrieving employee information...
                         </p>
                     )}
 
-                    {operationMessage && (
-                        <p className={`mt-5 text-sm ${operationError ? "text-red-600" : "text-emerald-700"}`} role="status">
-                            {operationMessage}
-                        </p>
-                    )}
-
                     <div className="mt-10 flex flex-wrap items-center justify-center gap-10 pt-7">
-                        <button type="button" className={`${buttonClass} w-30`}>
+                        <button
+                            type="button"
+                            className={`${buttonClass} w-30`}
+                        >
                             Report View
                         </button>
 
-                        <button type="button" className={`${buttonClass} w-30`}>
+                        <button
+                            type="button"
+                            className={`${buttonClass} w-30`}
+                        >
                             Back
                         </button>
 
@@ -380,6 +464,14 @@ function RecreationBill() {
                     </div>
                 </section>
             </div>
+
+            <MessageModal
+                isOpen={modal !== null}
+                type={modal?.type ?? "info"}
+                title={modal?.title}
+                message={modal?.message ?? ""}
+                onClose={closeModal}
+            />
         </main>
     );
 }
