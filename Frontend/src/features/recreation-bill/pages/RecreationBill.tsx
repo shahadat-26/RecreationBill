@@ -27,13 +27,16 @@ function getTodayDate(): string {
     return `${year}-${month}-${day}`;
 }
 
+
 const inputClass =
-    "h-[42px] w-full rounded-md border border-slate-300 bg-white px-4 text-[14px] text-slate-800 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-300 read-only:bg-slate-50 read-only:text-slate-600";
+    "h-[42px] w-full rounded-md border-[1.5px] border-slate-400 bg-white px-4 text-[14px] font-medium text-slate-900 outline-none transition focus:border-slate-600 focus:ring-1 focus:ring-slate-300 read-only:bg-slate-50 read-only:text-slate-800";
+
+const buttonClass =
+    "h-[40px] rounded-lg bg-[#1D0200] px-3 text-sm font-semibold text-white transition hover:bg-[#350600] disabled:cursor-not-allowed disabled:opacity-50";
+
 
 const labelClass = "mb-2 block text-[15px] font-medium text-slate-800";
 
-const buttonClass =
-    "h-[40px] rounded-md bg-[#1D0200] px-3 text-sm font-semibold text-white transition hover:bg-[#350600] disabled:cursor-not-allowed disabled:opacity-50";
 
 function RecreationBill() {
     const { employee, loading, message, search, reset } = useEmployeeSearch();
