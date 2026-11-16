@@ -35,8 +35,9 @@ namespace RecreationBill.Repositories
                     CATEGORY,
                     BANK_ACCOUNT_NO,
                     BASICPAY,
-                    BILL_NO
-                FROM MONI.REC_RESULT
+                    BILL_NO,
+                    DOC_NO
+                FROM CASHSECTION.DEMOREC_RESULT
                 WHERE EMPLOYEEID = :empId
                   AND DDATE BETWEEN SYSDATE - 200 AND SYSDATE
                 ORDER BY DDATE DESC";
@@ -55,6 +56,7 @@ namespace RecreationBill.Repositories
                         LegacyEmployeeId = legacyEmpId,
                         IsAlreadyRecorded = true,
                         BillNo = reader["BILL_NO"]?.ToString() ?? "",
+                        DocketNo = reader["DOC_NO"] == DBNull.Value ? null : Convert.ToDecimal(reader["DOC_NO"]),
                         EmployeeId = reader["EMPLOYEE_ID"]?.ToString() ?? "",
                         EmployeeName = reader["EMPLOYEE_NAME"]?.ToString() ?? "",
                         Designation = reader["DESIGNATION"]?.ToString() ?? "",
@@ -78,7 +80,7 @@ namespace RecreationBill.Repositories
                     CATEGORY,
                     BANK_ACCOUNT_NO,
                     STEP_PAY
-                FROM BUETIIS.EMPLOYEE
+                FROM CASHSECTION.DEMOEMPLOYEE
                 WHERE EMPLOYEEID = :empId";
 
             using (var cmd = new OracleCommand(masterQuery, conn))
@@ -117,6 +119,7 @@ namespace RecreationBill.Repositories
         // Delete existing matching record, then insert new record.
         // Both operations run in one transaction.
 
+
         public void SaveRecreationBill(RecreationBillRequest model)
         {
             using var conn = _dbService.CreateConnection();
@@ -127,16 +130,15 @@ namespace RecreationBill.Repositories
             try
             {
                 // STEP 1: Delete existing matching record.
-
-                string deleteSql = @"
-                    DELETE FROM MONI.REC_RESULT
-                    WHERE EMPLOYEEID = :empId
-                      AND BILL_NO = :billNo";
+                string deleteSql = @"DELETE FROM CASHSECTION.DEMOREC_RESULT
+                                     WHERE EMPLOYEEID = :empId
+                                     AND BILL_NO = :billNo";
 
                 using (var cmd = new OracleCommand(deleteSql, conn))
                 {
                     cmd.Transaction = transaction;
                     cmd.BindByName = true;
+
                     cmd.Parameters.Add("empId", OracleDbType.Int64).Value = model.LegacyEmployeeId;
                     cmd.Parameters.Add("billNo", OracleDbType.Varchar2, 15).Value = model.BillNo;
 
@@ -144,41 +146,25 @@ namespace RecreationBill.Repositories
                 }
 
                 // STEP 2: Insert the new recreation bill.
-
                 string insertSql = @"
-                    INSERT INTO MONI.REC_RESULT
-                    (
-                        EMPLOYEEID,
-                        EMPLOYEE_ID,
-                        EMPLOYEE_NAME,
-                        DESIGNATION,
-                        OFFICE,
-                        CATEGORY,
-                        BASICPAY,
-                        BANK_ACCOUNT_NO,
-                        BILL_NO,
-                        STAMP,
-                        DDATE
-                    )
-                    VALUES
-                    (
-                        :legacyId,
-                        :empId,
-                        :name,
-                        :designation,
-                        :office,
-                        :category,
-                        :basicPay,
-                        :bank,
-                        :billNo,
-                        :stamp,
-                        :ddate
-                    )";
+                                    INSERT INTO CASHSECTION.DEMOREC_RESULT
+                                    (
+                                        EMPLOYEEID, EMPLOYEE_ID, EMPLOYEE_NAME, DESIGNATION,
+                                        OFFICE, CATEGORY, BASICPAY, BANK_ACCOUNT_NO,
+                                        BILL_NO, DOC_NO, STAMP, DDATE
+                                    )
+                                    VALUES
+                                    (
+                                        :legacyId, :empId, :name, :designation,
+                                        :office, :category, :basicPay, :bank,
+                                        :billNo, :docketNo, :stamp, :ddate
+                                    )";
 
                 using (var cmd = new OracleCommand(insertSql, conn))
                 {
                     cmd.Transaction = transaction;
                     cmd.BindByName = true;
+
                     cmd.Parameters.Add("legacyId", OracleDbType.Int64).Value = model.LegacyEmployeeId;
                     cmd.Parameters.Add("empId", OracleDbType.Varchar2, 15).Value = model.EmployeeId;
                     cmd.Parameters.Add("name", OracleDbType.Varchar2, 50).Value = model.EmployeeName;
@@ -186,8 +172,11 @@ namespace RecreationBill.Repositories
                     cmd.Parameters.Add("office", OracleDbType.Varchar2, 50).Value = model.Office;
                     cmd.Parameters.Add("category", OracleDbType.Varchar2, 20).Value = model.Category;
                     cmd.Parameters.Add("basicPay", OracleDbType.Decimal).Value = model.BasicPay;
-                    cmd.Parameters.Add("bank", OracleDbType.Varchar2, 15).Value = string.IsNullOrWhiteSpace(model.BankAccountNo) ? DBNull.Value : model.BankAccountNo;
+                    cmd.Parameters.Add("bank", OracleDbType.Varchar2, 15).Value =
+                        string.IsNullOrWhiteSpace(model.BankAccountNo) ? DBNull.Value : model.BankAccountNo;
                     cmd.Parameters.Add("billNo", OracleDbType.Varchar2, 15).Value = model.BillNo;
+                    cmd.Parameters.Add("docketNo", OracleDbType.Decimal).Value =
+                        model.DocketNo.HasValue ? (object)model.DocketNo.Value : DBNull.Value;
                     cmd.Parameters.Add("stamp", OracleDbType.Decimal).Value = model.Stamp;
                     cmd.Parameters.Add("ddate", OracleDbType.Date).Value = model.DDate;
 
@@ -195,7 +184,6 @@ namespace RecreationBill.Repositories
                 }
 
                 // STEP 3: Commit both operations.
-
                 transaction.Commit();
             }
             catch
@@ -206,12 +194,12 @@ namespace RecreationBill.Repositories
                 }
                 catch
                 {
-                    // Preserve the original exception.
                 }
 
                 throw;
             }
         }
+
 
         // 3. UPDATE DOCKET NUMBER
         // DOC_NO is NUMBER in Oracle.
@@ -222,7 +210,7 @@ namespace RecreationBill.Repositories
             conn.Open();
 
             string updateSql = @"
-                UPDATE MONI.REC_RESULT
+                UPDATE CASHSECTION.DEMOREC_RESULT
                 SET DOC_NO = :docketNo
                 WHERE BILL_NO = :billNo";
 

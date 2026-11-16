@@ -30,6 +30,8 @@ namespace RecreationBill.Models
         [Required]
         public string BillNo { get; set; } = string.Empty;
 
+        public decimal? DocketNo { get; set; }
+
         public DateTime DDate { get; set; }
     }
 }

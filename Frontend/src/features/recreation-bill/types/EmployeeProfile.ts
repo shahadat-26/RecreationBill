@@ -8,5 +8,6 @@ export interface EmployeeProfile {
     bankAccountNo: string;
     basicPay: number;
     billNo: string;
+    docketNo: number | null;
     isAlreadyRecorded: boolean;
 }

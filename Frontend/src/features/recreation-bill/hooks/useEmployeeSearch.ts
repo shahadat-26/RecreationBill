@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { searchEmployee } from "../services/recreationApi";
 import type { EmployeeProfile } from "../types/EmployeeProfile";
 
@@ -8,20 +8,28 @@ export function useEmployeeSearch() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
 
+    const searchRequestId = useRef(0);
+
     const search = async (salaryId: string) => {
         const trimmedSalaryId = salaryId.trim();
 
         if (!trimmedSalaryId) {
+            searchRequestId.current++;
             setEmployee(null);
+            setLoading(false);
             setMessage("Please enter a valid Salary ID.");
             return;
         }
 
         if (!/^\d+$/.test(trimmedSalaryId) || Number(trimmedSalaryId) <= 0) {
+            searchRequestId.current++;
             setEmployee(null);
+            setLoading(false);
             setMessage("Please enter a valid Salary ID.");
             return;
         }
+
+        const requestId = ++searchRequestId.current;
 
         setLoading(true);
         setEmployee(null);
@@ -30,28 +38,34 @@ export function useEmployeeSearch() {
         try {
             const result = await searchEmployee(Number(trimmedSalaryId));
 
-            setEmployee(result);
+            if (requestId !== searchRequestId.current) return;
 
+            setEmployee(result);
             setMessage(
                 result.isAlreadyRecorded
                     ? "Already Recorded. Edit Information and Then Save."
                     : "Employee information loaded successfully."
             );
         } catch (error) {
-            setEmployee(null);
+            if (requestId !== searchRequestId.current) return;
 
+            setEmployee(null);
             setMessage(
                 error instanceof Error
                     ? error.message
                     : "Unable to retrieve employee information."
             );
         } finally {
-            setLoading(false);
+            if (requestId === searchRequestId.current) {
+                setLoading(false);
+            }
         }
     };
 
     const reset = () => {
+        searchRequestId.current++;
         setEmployee(null);
+        setLoading(false);
         setMessage("");
     };
 

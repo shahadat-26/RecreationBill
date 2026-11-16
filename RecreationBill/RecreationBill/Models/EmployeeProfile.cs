@@ -20,6 +20,8 @@
 
         public string BillNo { get; set; } = string.Empty;
 
+        public decimal? DocketNo { get; set; }
+
         public bool IsAlreadyRecorded { get; set; }
     }
 }
