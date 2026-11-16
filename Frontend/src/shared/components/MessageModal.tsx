@@ -82,7 +82,7 @@ function MessageModal({
                 aria-modal="true"
                 aria-labelledby="message-modal-title"
                 aria-describedby="message-modal-description"
-                className="w-full max-w-md rounded-xl bg-white px-7 py-8 shadow-2xl"
+                className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-7 py-8 shadow-2xl"
             >
                 <div className="flex flex-col items-center text-center">
                     <span

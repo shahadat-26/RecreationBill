@@ -27,16 +27,13 @@ function getTodayDate(): string {
     return `${year}-${month}-${day}`;
 }
 
-
 const inputClass =
     "h-[42px] w-full rounded-md border-[1.5px] border-slate-400 bg-white px-4 text-[14px] font-medium text-slate-900 outline-none transition focus:border-slate-600 focus:ring-1 focus:ring-slate-300 read-only:bg-slate-50 read-only:text-slate-800";
 
 const buttonClass =
     "h-[40px] rounded-lg bg-[#1D0200] px-3 text-sm font-semibold text-white transition hover:bg-[#350600] disabled:cursor-not-allowed disabled:opacity-50";
 
-
 const labelClass = "mb-2 block text-[15px] font-medium text-slate-800";
-
 
 function RecreationBill() {
     const { employee, loading, message, search, reset } = useEmployeeSearch();
@@ -81,14 +78,15 @@ function RecreationBill() {
         }
     }, [employee]);
 
-    // Display employee-search messages through the shared modal.
+    // Display only relevant employee-search messages.
     useEffect(() => {
         if (!message) return;
 
         if (employee?.isAlreadyRecorded) {
             showModal("info", message);
         } else if (employee) {
-            showModal("success", message);
+            // Normal employee loading does not need a success modal.
+            return;
         } else if (message === "Please enter a valid Salary ID.") {
             showModal("warning", message);
         } else {
@@ -111,6 +109,22 @@ function RecreationBill() {
     };
 
     const handleSearch = async () => {
+        // Close any previously displayed message.
+        closeModal();
+
+        // Clear previous employee information.
+        reset();
+        setBuetId("");
+        setBankAccount("");
+        setBasicSalary("");
+
+        // Clear previous bill information.
+        setBillNo("");
+        setDocNo("");
+        setStamp("10");
+        setBillDate(getTodayDate());
+
+        // Search using the entered Salary ID.
         await search(salaryId);
     };
 
@@ -214,6 +228,11 @@ function RecreationBill() {
             setBankAccount("");
             setBasicSalary("");
 
+            setBillNo("");
+            setDocNo("");
+            setStamp("10");
+            setBillDate(getTodayDate());
+
             document.getElementById("salaryId")?.focus();
         } catch (error) {
             showModal(
@@ -303,7 +322,7 @@ function RecreationBill() {
                         </div>
 
                         <div>
-                            <label className={labelClass}>Doc No</label>
+                            <label className={labelClass}>Docket Number</label>
                             <div className="flex gap-3">
                                 <input
                                     type="text"
