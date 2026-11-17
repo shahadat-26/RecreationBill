@@ -1,4 +1,5 @@
 ﻿
+using System.Text.RegularExpressions;
 using Oracle.ManagedDataAccess.Client;
 using RecreationBill.Models;
 using RecreationBill.Repositories.Interfaces;
@@ -23,20 +24,11 @@ namespace RecreationBill.Repositories
             using var conn = _dbService.CreateConnection();
             conn.Open();
 
-            // First check whether a recreation bill exists for this employee within the previous 200 days.
+            // Check whether a recreation bill exists for this employee within the previous 200 days.
 
             string checkQuery = @"
-                SELECT
-                    EMPLOYEEID,
-                    EMPLOYEE_ID,
-                    EMPLOYEE_NAME,
-                    DESIGNATION,
-                    OFFICE,
-                    CATEGORY,
-                    BANK_ACCOUNT_NO,
-                    BASICPAY,
-                    BILL_NO,
-                    DOC_NO
+                SELECT EMPLOYEEID, EMPLOYEE_ID, EMPLOYEE_NAME, DESIGNATION, OFFICE,
+                       CATEGORY, BANK_ACCOUNT_NO, BASICPAY, BILL_NO, DOC_NO
                 FROM CASHSECTION.DEMOREC_RESULT
                 WHERE EMPLOYEEID = :empId
                   AND DDATE BETWEEN SYSDATE - 200 AND SYSDATE
@@ -70,16 +62,11 @@ namespace RecreationBill.Repositories
 
             // No recent recreation bill found. Retrieve employee information from the master table.
 
+            EmployeeProfile? employee = null;
+
             string masterQuery = @"
-                SELECT
-                    EMPLOYEEID,
-                    EMPLOYEE_ID,
-                    EMPLOYEE_NAME,
-                    DESIGNATION,
-                    OFFICE,
-                    CATEGORY,
-                    BANK_ACCOUNT_NO,
-                    STEP_PAY
+                SELECT EMPLOYEEID, EMPLOYEE_ID, EMPLOYEE_NAME, DESIGNATION,
+                       OFFICE, CATEGORY, BANK_ACCOUNT_NO, STEP_PAY
                 FROM CASHSECTION.DEMOEMPLOYEE
                 WHERE EMPLOYEEID = :empId";
 
@@ -95,7 +82,7 @@ namespace RecreationBill.Repositories
                     int basicPayOrdinal = reader.GetOrdinal("STEP_PAY");
                     decimal basicPay = reader.IsDBNull(basicPayOrdinal) ? 0m : reader.GetDecimal(basicPayOrdinal);
 
-                    return new EmployeeProfile
+                    employee = new EmployeeProfile
                     {
                         LegacyEmployeeId = legacyEmpId,
                         IsAlreadyRecorded = false,
@@ -111,14 +98,85 @@ namespace RecreationBill.Repositories
                 }
             }
 
-            // Salary ID does not exist.
+            // Generate a new Bill Number only when the employee exists but has no existing record.
+
+            if (employee != null)
+            {
+                employee.BillNo = GenerateBillNumber(conn, employee.Category);
+                return employee;
+            }
+
             return null;
         }
 
-        // 2. SAVE RECREATION BILL
+        // 2. GENERATE BILL NUMBER
+        // Checks all employees' bills for the category within the current fiscal year.
+
+        private string GenerateBillNumber(OracleConnection conn, string category)
+        {
+            category = category.Trim().ToUpperInvariant();
+
+            if (string.IsNullOrWhiteSpace(category))
+                throw new InvalidOperationException("Cannot generate Bill Number because employee category is missing.");
+
+            // Determine the current fiscal year using the server's system date.
+
+            DateTime today = DateTime.Today;
+            int fiscalStartYear = today.Month >= 7 ? today.Year : today.Year - 1;
+            DateTime fiscalStartDate = new DateTime(fiscalStartYear, 7, 1);
+            DateTime fiscalEndDate = fiscalStartDate.AddYears(1);
+            string fiscalYear = $"{fiscalStartYear}-{(fiscalStartYear + 1) % 100:D2}";
+
+            // Find the latest Bill Number for this category, regardless of employee.
+
+            string latestBillQuery = @"
+                SELECT BILL_NO
+                FROM (
+                    SELECT BILL_NO
+                    FROM CASHSECTION.DEMOREC_RESULT
+                    WHERE CATEGORY = :category
+                      AND DDATE >= :startDate
+                      AND DDATE < :endDate
+                      AND REGEXP_LIKE(BILL_NO, :billPattern)
+                    ORDER BY DDATE DESC
+                )
+                WHERE ROWNUM = 1";
+
+            string billPattern = "^" + Regex.Escape(category) + "[0-9]+/RL/" + Regex.Escape(fiscalYear) + "$";
+            string? latestBillNo = null;
+
+            using (var cmd = new OracleCommand(latestBillQuery, conn))
+            {
+                cmd.BindByName = true;
+                cmd.Parameters.Add("category", OracleDbType.Varchar2, 20).Value = category;
+                cmd.Parameters.Add("startDate", OracleDbType.Date).Value = fiscalStartDate;
+                cmd.Parameters.Add("endDate", OracleDbType.Date).Value = fiscalEndDate;
+                cmd.Parameters.Add("billPattern", OracleDbType.Varchar2, 100).Value = billPattern;
+
+                using var reader = cmd.ExecuteReader();
+                if (reader.Read())
+                    latestBillNo = reader["BILL_NO"]?.ToString();
+            }
+
+            // Start from 1 if no matching bill exists in this fiscal year.
+
+            int lastSequence = 0;
+
+            if (!string.IsNullOrWhiteSpace(latestBillNo))
+            {
+                Match match = Regex.Match(latestBillNo, "^" + Regex.Escape(category) + "([0-9]+)/RL/" + Regex.Escape(fiscalYear) + "$");
+
+                if (!match.Success || !int.TryParse(match.Groups[1].Value, out lastSequence))
+                    throw new InvalidOperationException("Unable to determine the latest Bill Number sequence.");
+            }
+
+            int nextSequence = checked(lastSequence + 1);
+            return $"{category}{nextSequence:D2}/RL/{fiscalYear}";
+        }
+
+        // 3. SAVE RECREATION BILL
         // Delete existing matching record, then insert new record.
         // Both operations run in one transaction.
-
 
         public void SaveRecreationBill(RecreationBillRequest model)
         {
@@ -130,6 +188,7 @@ namespace RecreationBill.Repositories
             try
             {
                 // STEP 1: Delete existing matching record.
+
                 string deleteSql = @"DELETE FROM CASHSECTION.DEMOREC_RESULT
                                      WHERE EMPLOYEEID = :empId
                                      AND BILL_NO = :billNo";
@@ -138,33 +197,31 @@ namespace RecreationBill.Repositories
                 {
                     cmd.Transaction = transaction;
                     cmd.BindByName = true;
-
                     cmd.Parameters.Add("empId", OracleDbType.Int64).Value = model.LegacyEmployeeId;
                     cmd.Parameters.Add("billNo", OracleDbType.Varchar2, 15).Value = model.BillNo;
-
                     cmd.ExecuteNonQuery();
                 }
 
                 // STEP 2: Insert the new recreation bill.
+
                 string insertSql = @"
-                                    INSERT INTO CASHSECTION.DEMOREC_RESULT
-                                    (
-                                        EMPLOYEEID, EMPLOYEE_ID, EMPLOYEE_NAME, DESIGNATION,
-                                        OFFICE, CATEGORY, BASICPAY, BANK_ACCOUNT_NO,
-                                        BILL_NO, DOC_NO, STAMP, DDATE
-                                    )
-                                    VALUES
-                                    (
-                                        :legacyId, :empId, :name, :designation,
-                                        :office, :category, :basicPay, :bank,
-                                        :billNo, :docketNo, :stamp, :ddate
-                                    )";
+                    INSERT INTO CASHSECTION.DEMOREC_RESULT
+                    (
+                        EMPLOYEEID, EMPLOYEE_ID, EMPLOYEE_NAME, DESIGNATION,
+                        OFFICE, CATEGORY, BASICPAY, BANK_ACCOUNT_NO,
+                        BILL_NO, DOC_NO, STAMP, DDATE
+                    )
+                    VALUES
+                    (
+                        :legacyId, :empId, :name, :designation,
+                        :office, :category, :basicPay, :bank,
+                        :billNo, :docketNo, :stamp, :ddate
+                    )";
 
                 using (var cmd = new OracleCommand(insertSql, conn))
                 {
                     cmd.Transaction = transaction;
                     cmd.BindByName = true;
-
                     cmd.Parameters.Add("legacyId", OracleDbType.Int64).Value = model.LegacyEmployeeId;
                     cmd.Parameters.Add("empId", OracleDbType.Varchar2, 15).Value = model.EmployeeId;
                     cmd.Parameters.Add("name", OracleDbType.Varchar2, 50).Value = model.EmployeeName;
@@ -179,29 +236,22 @@ namespace RecreationBill.Repositories
                         model.DocketNo.HasValue ? (object)model.DocketNo.Value : DBNull.Value;
                     cmd.Parameters.Add("stamp", OracleDbType.Decimal).Value = model.Stamp;
                     cmd.Parameters.Add("ddate", OracleDbType.Date).Value = model.DDate;
-
                     cmd.ExecuteNonQuery();
                 }
 
                 // STEP 3: Commit both operations.
+
                 transaction.Commit();
             }
             catch
             {
-                try
-                {
-                    transaction.Rollback();
-                }
-                catch
-                {
-                }
-
+                try { transaction.Rollback(); }
+                catch { }
                 throw;
             }
         }
 
-
-        // 3. UPDATE DOCKET NUMBER
+        // 4. UPDATE DOCKET NUMBER
         // DOC_NO is NUMBER in Oracle.
 
         public bool UpdateDocketNumber(string billNo, decimal docketNo)
@@ -215,13 +265,11 @@ namespace RecreationBill.Repositories
                 WHERE BILL_NO = :billNo";
 
             using var cmd = new OracleCommand(updateSql, conn);
-
             cmd.BindByName = true;
             cmd.Parameters.Add("docketNo", OracleDbType.Decimal).Value = docketNo;
             cmd.Parameters.Add("billNo", OracleDbType.Varchar2, 15).Value = billNo;
 
             int rowsAffected = cmd.ExecuteNonQuery();
-
             return rowsAffected > 0;
         }
     }

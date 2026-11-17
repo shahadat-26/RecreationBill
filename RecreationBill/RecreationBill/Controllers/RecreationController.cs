@@ -28,7 +28,7 @@ namespace RecreationBill.Controllers
 
             var profile = _service.GetEmployeeData(legacyEmpId);
 
-            if (profile == null) return NotFound(new { message = "There is no such ID. Please enter a valid ID." });
+            if (profile == null) return NotFound(new { message = "No employee found with this Salary ID." });
 
             return Ok(profile);
         }
